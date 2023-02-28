@@ -1,0 +1,669 @@
+	{
+		"name": "MidiMSC",
+		"type": "MIDI",
+		"path": "Protocol",
+		"version": "0.0.1",
+		"description": "Chataigne script to record and play midi msc events",
+		"url": "https://github.com/ssm2017/MidiMSC-Chataigne-Module",
+		"downloadURL": "https://github.com/ssm2017/MidiMSC-Chataigne-Module/archive/refs/heads/master.zip",
+		"hasInput": true,
+		"hasOutput": true,
+		"defaults": {
+			"autoAdd": false
+		},
+		"alwaysShowValues": true,
+		"hideDefaultCommands": true,
+		"hideDefaultParameters": [
+			"useHierarchy",
+			"autoAdd",
+			"autoFeedback",
+			"octaveShift"
+		],
+		"scripts": [
+			"midiMsc.js"
+		],
+		"parameters": {
+			"Device parameters": {
+				"type": "Container",
+				"collapsed": false,
+				"Device Model": {
+					"type": "Enum",
+					"description": "Select the device model because some of them do not follow the specs",
+					"default": "standard",
+					"options": {
+						"Standard": "standard",
+						"GrandMa2": "grandma2"
+					}
+				},
+				"Send": {
+					"type": "Container",
+					"collapsed": true,
+					"Device Type": {
+						"type": "Enum",
+						"description": "Select the device destination. All = all the devices; Group = all the devices in a group; Device = a specific device.",
+						"default": "all",
+						"options": {
+							"All": "all",
+							"Group": "group",
+							"Device": "device"
+						}
+					},
+					"Device": {
+						"type": "Integer",
+						"description": "The device id must be between 0 and 111.",
+						"default": 0,
+						"min": 0,
+						"max": 111,
+						"dependency": {
+							"source": "deviceType",
+							"check": "equals",
+							"value": "device",
+							"action": "show"
+						}
+					},
+					"Group": {
+						"type": "Integer",
+						"description": "The group id must be between 1 and 15.",
+						"default": 1,
+						"min": 1,
+						"max": 15,
+						"dependency": {
+							"source": "deviceType",
+							"check": "equals",
+							"value": "group",
+							"action": "show"
+						}
+					},
+					"Command Format": {
+						"type": "Enum",
+						"description": "Select the command format.",
+						"default": 127,
+						"options": {}
+					},
+					"QList Offset": {
+						"type": "Integer",
+						"description": "Some destinations are beginning at 0 and some at 1",
+						"default": 0,
+						"min": -1,
+						"max": 1
+					},
+					"QList Separator": {
+						"type": "Enum",
+						"description": "Select the Q list separator.",
+						"default": 46,
+						"options": {
+							"Dot": 46,
+							"Space": 32
+						}
+					}
+				},
+				"Receive": {
+					"type": "Container",
+					"collapsed": true,
+					"Device Type": {
+						"type": "Enum",
+						"description": "Select listening parameters. All = all the devices; Group = all the devices in a group; Device = a specific device.",
+						"default": "all",
+						"options": {
+							"All": "all",
+							"Group": "group",
+							"Device": "device"
+						}
+					},
+					"Device": {
+						"type": "Integer",
+						"description": "The device id must be between 0 and 111.",
+						"default": 0,
+						"min": 0,
+						"max": 111,
+						"dependency": {
+							"source": "deviceType",
+							"check": "equals",
+							"value": "device",
+							"action": "show"
+						}
+					},
+					"Group": {
+						"type": "Integer",
+						"description": "The group id must be between 1 and 15.",
+						"default": 1,
+						"min": 1,
+						"max": 15,
+						"dependency": {
+							"source": "deviceType",
+							"check": "equals",
+							"value": "group",
+							"action": "show"
+						}
+					},
+					"Command Format": {
+						"type": "Enum",
+						"description": "Select the command format.",
+						"default": 127,
+						"options": {}
+					},
+					"QList Offset": {
+						"type": "Integer",
+						"description": "Some destinations are beginning at 0 and some at 1",
+						"default": 0,
+						"min": -1,
+						"max": 1
+					},
+					"QList Separator": {
+						"type": "Enum",
+						"description": "Select the Q list separator.",
+						"default": 46,
+						"options": {
+							"Dot": 46,
+							"Space": 32
+						}
+					}
+				}
+			},
+			"Module parameters": {
+				"type": "Container",
+				"collapsed": false,
+				"Listen": {
+					"type": "Enum",
+					"description": "Choose if you want to listen only the existing valmues or auto add values. (\"None\" = No capture; \"AASingle\" = Capture the first one only; \"AAAll\" = Capture everything.",
+					"default": "nothing",
+					"options": {
+						"None": "nothing",
+						"Listen": "listen",
+						"AASingle": "autoadd_single",
+						"AAAll": "autoadd_all"
+					}
+				}
+			}
+		},
+		"commands": {
+			"Generate QLists": {
+				"menu": "Generate",
+				"callback": "generateQLists",
+				"parameters": {
+					"Qty": {
+						"type": "Integer",
+						"description": "Quantity of items to generate.",
+						"default": 0,
+						"min": 0,
+						"max": 100
+					},
+					"QList main": {
+						"type": "Integer",
+						"description": "Enter the QList main to create QList.",
+						"default": 0,
+						"min": 0,
+						"max": 9999
+					},
+					"Start QList sub": {
+						"type": "Integer",
+						"description": "Enter the starting QList sub.",
+						"default": 0,
+						"min": 0,
+						"max": 9999
+					}
+				}
+			},
+			"Fill Custom Variables Group": {
+				"menu": "Generate",
+				"callback": "fillCustomVariablesGroup",
+				"parameters": {
+					"Name": {
+						"type": "String",
+						"description": "enter the name of the custom variables group.",
+						"default": "My Group"
+					},
+					"Type": {
+						"type": "Enum",
+						"description": "Generate a custom variables group with the same kind of items to use with multiplex for example.",
+						"default": "FaderLevel",
+						"options": {
+							"FaderLevel": "FaderLevel",
+							"Go": "Go",
+							"Stop": "Stop",
+							"Resume": "Resume",
+							"Go Off": "GoOff"
+						}
+					},
+					"Qty": {
+						"type": "Integer",
+						"description": "Quantity of items to generate.",
+						"default": 0,
+						"min": 0,
+						"max": 100
+					},
+					"QList main": {
+						"type": "Integer",
+						"description": "Enter the QList main to create QList.",
+						"default": 0,
+						"min": 0,
+						"max": 9999
+					},
+					"Start QList sub": {
+						"type": "Integer",
+						"description": "Enter the starting QList.",
+						"default": 0,
+						"min": 0,
+						"max": 9999
+					}
+				}
+			},
+			"Send Go": {
+				"menu": "Send Command",
+				"callback": "sendGo",
+				"parameters": {
+					"Send Time": {
+						"type": "Boolean",
+						"description": "You can add a time to move the fader.",
+						"default": false
+					},
+					"TimeHour": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 23,
+						"dependency": {
+							"source": "sendTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"TimeMinute": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 59,
+						"dependency": {
+							"source": "sendTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"TimeSecond": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 59,
+						"dependency": {
+							"source": "sendTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"TimeFrame": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 29,
+						"dependency": {
+							"source": "sendTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"TimeSubframe": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 99,
+						"dependency": {
+							"source": "sendTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"Send Q Number": {
+						"type": "Boolean",
+						"description": "Select if you want to add Q Number parameters.",
+						"default": false
+					},
+					"Q Main": {
+						"type": "Integer",
+						"description": "The left part of the cue number in the QList. (for cue 1.2, this is 1)",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"Q Sub": {
+						"type": "Integer",
+						"description": "The right part of the cue number in the QList. (for cue 1.2, this is 2)",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"Send Q List": {
+						"type": "Boolean",
+						"description": "Select if you want to add Q List parameters.",
+						"default": false,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"QList Main": {
+						"type": "Integer",
+						"description": "QList main between 0 and 9999.",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQList",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"QList Sub": {
+						"type": "Integer",
+						"description": "QList sub between 0 and 9999",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQList",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					}
+				}
+			},
+			"Send Stop or Resume": {
+				"menu": "Send Command",
+				"callback": "sendStopResume",
+				"parameters": {
+					"Stop or Resume": {
+						"type": "Enum",
+						"description": "Select if you want to send a Stop command or a Resume command.",
+						"default": "stop",
+						"options": {
+							"Stop": "stop",
+							"Resume": "resume"
+						}
+					},
+					"Send Q Number": {
+						"type": "Boolean",
+						"description": "Select if you want to add Q Number parameters.",
+						"default": false
+					},
+					"Q Main": {
+						"type": "Integer",
+						"description": "The left part of the cue number in the QList. (for cue 1.2, this is 1)",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"Q Sub": {
+						"type": "Integer",
+						"description": "The right part of the cue number in the QList. (for cue 1.2, this is 2)",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"Send Q List": {
+						"type": "Boolean",
+						"description": "Select if you want to add Q List parameters.",
+						"default": false,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"QList Main": {
+						"type": "Integer",
+						"description": "QList main between 0 and 9999.",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQList",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"QList Sub": {
+						"type": "Integer",
+						"description": "QList sub between 0 and 9999",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQList",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					}
+				}
+			},
+			"Send Set": {
+				"menu": "Send Command",
+				"callback": "sendSet",
+				"parameters": {
+					"FaderLevel": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 100
+					},
+					"Send Q List": {
+						"type": "Boolean",
+						"description": "Select if you want to add Q List parameters.",
+						"default": false
+					},
+					"QList Main": {
+						"type": "Integer",
+						"description": "QList main between 0 and 9999.",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQList",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"QList Sub": {
+						"type": "Integer",
+						"description": "QList sub between 0 and 9999",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQList",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"Use Time": {
+						"type": "Boolean",
+						"description": "You can add a time to move the fader.",
+						"default": false
+					},
+					"TimeHour": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 23,
+						"dependency": {
+							"source": "useTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"TimeMinute": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 59,
+						"dependency": {
+							"source": "useTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"TimeSecond": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 59,
+						"dependency": {
+							"source": "useTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"TimeFrame": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 29,
+						"dependency": {
+							"source": "useTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"TimeSubframe": {
+						"type": "Integer",
+						"default": 0,
+						"min": 0,
+						"max": 99,
+						"dependency": {
+							"source": "useTime",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					}
+				}
+			},
+			"Send Fire": {
+				"menu": "Send Command",
+				"callback": "sendFire",
+				"parameters": {
+					"Macro": {
+						"type": "Integer",
+						"description": "The macro number to fire (between 1 and 9999).",
+						"default": 1,
+						"min": 1,
+						"max": 9999
+					}
+				}
+			},
+			"Send Go Off": {
+				"menu": "Send Command",
+				"callback": "sendGoOff",
+				"parameters": {
+					"Send Q Number": {
+						"type": "Boolean",
+						"description": "Select if you want to add Q Number parameters.",
+						"default": false
+					},
+					"Q Main": {
+						"type": "Integer",
+						"description": "The left part of the cue number in the QList. (for cue 1.2, this is 1)",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"Q Sub": {
+						"type": "Integer",
+						"description": "The right part of the cue number in the QList. (for cue 1.2, this is 2)",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"Send Q List": {
+						"type": "Boolean",
+						"description": "Select if you want to add Q List parameters.",
+						"default": false,
+						"dependency": {
+							"source": "sendQNumber",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"QList Main": {
+						"type": "Integer",
+						"description": "QList main between 0 and 9999.",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQList",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					},
+					"QList Sub": {
+						"type": "Integer",
+						"description": "QList sub between 0 and 9999",
+						"default": 0,
+						"min": 0,
+						"max": 9999,
+						"dependency": {
+							"source": "sendQList",
+							"check": "equals",
+							"value": true,
+							"action": "show"
+						}
+					}
+				}
+			}
+		}
+	}
